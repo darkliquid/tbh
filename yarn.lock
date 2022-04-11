@@ -5038,11 +5038,6 @@ pseudomap@^1.0.2:
   resolved "https://registry.npmmirror.com/pseudomap/-/pseudomap-1.0.2.tgz#f052a28da70e618917ef0a8ac34c1ae5a68286b3"
   integrity sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==
 
-public-google-sheets-parser@^1.2.6:
-  version "1.2.6"
-  resolved "https://registry.yarnpkg.com/public-google-sheets-parser/-/public-google-sheets-parser-1.2.6.tgz#61ea4bb65a579a7e0afc8fea762cf14c406b750d"
-  integrity sha512-sWtWEGw7735Hfo04zjMGiXF7XI9SNTjBJFQQluIQmPjI3hnB9pSgcUMPGRF+W0IiJSF28x2EksJ/n1Vi/x8jYg==
-
 pump@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmmirror.com/pump/-/pump-3.0.0.tgz#b4a2116815bde2f4e1ea602354e8c75565107a64"
