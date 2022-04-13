@@ -5,12 +5,16 @@
         <v-card>
           <v-card-title>Host a Game</v-card-title>
           <v-card-text>
-            <v-form>
+            <v-form ref="form" v-model="valid" lazy-validation>
               <v-text-field
                 label="Player Name"
                 placeholder="Gamer McGameface"
                 variant="outlined"
                 v-model="game.username"
+                required
+                @blur="updateName"
+                @input="updateName"
+                :rules="[ v => !!v || 'Player name is required' ]"
               ></v-text-field>
               <v-text-field
                 v-model="game.spreadsheetID"
@@ -19,9 +23,12 @@
                 variant="outlined"
                 clearable
                 :loading="loadingGameData"
+                @blur="loadGameData"
                 @keydown.enter.prevent="loadGameData"
                 :messages="dilemmaInfo"
                 @click:clear="game.dilemmas = []"
+                required
+                :rules="[ v => (v && v.length > 0) || 'You need at least 1 dilemma']"
               ></v-text-field>
               <v-list>
                 <v-list-item v-if="waiting">
@@ -32,14 +39,14 @@
                     color="primary"
                   ></v-progress-circular>
                 </v-list-item>
-                <v-list-item v-for="peer in game.peers" :key="peer">{{ peer }}</v-list-item>
+                <v-list-item v-for="peer in game.peers" :key="peer">{{ game.usernames[peer] || peer }}</v-list-item>
               </v-list>
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" :to="gameLink" :disabled="!gameLink">Start Game</v-btn>
+            <v-btn color="primary" :to="gameLink" :disabled="!valid || !peerID()">Start Game</v-btn>
             <v-spacer></v-spacer>
-            <v-btn color="primary" :disabled="!game.peer" @click="copyShareLink">Share Join Link</v-btn>
+            <v-btn color="primary" :disabled="!valid || !peerID()" @click="copyShareLink">Share Join Link</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -49,10 +56,13 @@
 
 <script setup>
 import { useGameStore } from '@/store/game'
-import { computed, ref, onMounted, inject } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { Random, MersenneTwister19937, createEntropy } from 'random-js'
 const loadingGameData = ref(false)
 const game = useGameStore()
 const waiting = ref(true)
+const valid = ref(false)
+const form = ref(null)
 
 const dilemmaInfo = computed(() => {
   if (!game.spreadsheetID || loadingGameData.value) return
@@ -68,6 +78,13 @@ const gameLink = computed(() => {
   return null
 })
 
+function peerID() {
+  if (game.peer && game.peer.id) {
+    return game.peer.id
+  }
+  return null
+}
+
 function loadGameData() {
   if (loadingGameData.value) {
     return
@@ -77,9 +94,14 @@ function loadGameData() {
     .then((res) => res.json())
     .then((data) => {
       game.dilemmas = data
+      game.seed = createEntropy()
+      new Random(MersenneTwister19937.seedWithArray(game.seed)).shuffle(game.dilemmas)
     })
     .then(() => {
       loadingGameData.value = false
+      if (form.value) {
+        form.value.validate()
+      }
     });
 }
 
@@ -87,6 +109,15 @@ const copyShareLink = () => {
   if (game.peer && game.peer.id) {
     const pathPrefix = import.meta.env.BASE_URL;
     navigator.clipboard.writeText(`${window.origin}${pathPrefix}join/${game.peer.id}`)
+  }
+}
+
+function updateName() {
+  if (form.value) {
+    form.value.validate()
+  }
+  if (game.username) {
+    game.updateName()
   }
 }
 

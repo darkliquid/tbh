@@ -26,4 +26,8 @@ html, body, #app, #app .v-application {
   background-size:80px 140px;
   background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
 }
+
+#app .v-btn--disabled.v-btn--disabled {
+  color: rgba(var(--v-theme-on-surface), 0.26) !important;
+}
 </style>

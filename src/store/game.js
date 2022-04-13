@@ -4,6 +4,7 @@ import {
 
 import Peer from 'peerjs'
 import { markRaw } from 'vue'
+import { Random, MersenneTwister19937, createEntropy } from 'random-js'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -21,51 +22,25 @@ export const useGameStore = defineStore('game', {
     username: '',
     usernames: {},
     gameStarted: false,
+    seed: [],
   }),
   actions: {
-    // we keep track of connections ourselves as suggested in peerjs's documentation
-    addConnection(conn) {
-      this.connections[conn.peer] = conn;
-      this.updatepeers();
-    },
-    removeConnection(conn) {
-      delete this.connections[conn.peer];
-      this.updatepeers();
-    },
-    updatepeers() {
-      this.peers = Object.keys(this.connections);
-    },
-    disconnectPeer() {
-      this.peer.disconnect();
+    // Commands
+    updateName() {
+      Object.values(this.connections).forEach(conn => {
+        this._updateName(conn)
+      })
     },
 
-    // called to properly configure connection's client listeners
-    configureConnection(conn) {
-      conn.on("data", data => {
-        // if data is about connections (the list of peers sent when connected)
-        if (data.type === "connections") {
-          data.peers.forEach(peerId => {
-            if (!this.connections[peerId]) {
-              this.initiateConnection(peerId);
-            }
-          });
-        } else {
-          console.log(data)
-        }
-        // please note here that if data.type is undefined, this endpoint won't do anything!
-      });
-      conn.on("close", () => this.removeConnection(conn));
-      conn.on("error", () => this.removeConnection(conn));
-
-      // if the caller joins have a call, we merge calls
-      conn.metadata.peers.forEach(peerId => {
-        if (!this.connections[peerId]) {
-          this.initiateConnection(peerId);
-        }
-      });
+    startGame() {
+      this.seed = createEntropy()
+      Object.values(this.connections).forEach(conn => {
+        this._startGame(conn)
+      })
     },
-    // called to initiate a connection (by the caller)
-    initiateConnection(peerId) {
+
+    // connect to another peer
+    connect(peerId) {
       if (!this.peers.includes(peerId) && peerId !== this.peer.id) {
         this.loading = true;
         this.peerError = "";
@@ -73,18 +48,22 @@ export const useGameStore = defineStore('game', {
         const options = {
           metadata: {
             // if the caller has peers, we send them to merge calls
-            peers: this.peers
+            peers: this.peers,
+            username: this.username
           }
         };
         const conn = this.peer.connect(peerId, options);
-        this.configureConnection(conn);
+        this._configureConnection(conn);
 
         conn.on("open", () => {
-          this.addConnection(conn);
+          this._addConnection(conn);
           this.loading = false;
+          this._updateName(conn)
         });
       }
     },
+
+    // create our peerjs instance
     createPeer() {
       if (this.peer) {
         return this.peer;
@@ -108,19 +87,107 @@ export const useGameStore = defineStore('game', {
       // when peer receives a connection
       this.peer.on('connection', conn => {
         if (!this.peers.includes(conn.peer)) {
-          this.configureConnection(conn);
+          this._configureConnection(conn);
 
           conn.on("open", () => {
-            this.addConnection(conn);
+            this._addConnection(conn);
 
             // send every connection previously established to connect everyone (merge chat rooms)
             conn.send({
               type: "connections",
-              peers: this.peers
+              peers: this.peers,
+              username: this.username
             });
           });
         }
       });
-    }
+    },
+
+    // ----- Internal connection methods -----
+
+    // handle commands coming over the data connection
+    _handleData(peerId, data) {
+      console.log(peerId)
+      console.log(data)
+
+      switch (data.type) {
+        case "connections":
+          this.usernames[peerId] = data.username;
+          data.peers.forEach(peerId => {
+            if (!this.connections[peerId]) {
+              this.connect(peerId);
+            }
+          });
+          break;
+
+        case "updateName":
+          this.usernames[peerId] = data.username;
+          break;
+
+        case "startGame":
+          this.seed = data.seed;
+          this.spreadsheetID = data.spreadsheetID;
+          fetch(`https://opensheet.elk.sh/${this.spreadsheetID}/1`)
+            .then((res) => res.json())
+            .then((dilemmas) => {
+              this.dilemmas = dilemmas
+              new Random(MersenneTwister19937.seedWithArray(this.seed)).shuffle(this.dilemmas)
+            });
+
+          this.gameStarted = true;
+          break;
+
+        default:
+          console.log(data)
+          break;
+      }
+    },
+
+    _updateName(conn) {
+      conn.send({
+        type: 'updateName',
+        username: this.username
+      })
+    },
+
+    _startGame(conn) {
+      conn.send({
+        type: 'startGame',
+        seed: this.seed,
+        spreadsheetID: this.spreadsheetID
+      })
+    },
+
+    // we keep track of connections ourselves as suggested in peerjs's documentation
+    _addConnection(conn) {
+      this.connections[conn.peer] = conn;
+      this._updatepeers();
+    },
+    _removeConnection(conn) {
+      delete this.connections[conn.peer];
+      this._updatepeers();
+    },
+    _updatepeers() {
+      this.peers = Object.keys(this.connections);
+    },
+    _disconnectPeer() {
+      this.peer.disconnect();
+    },
+
+    // called to properly configure connection's client listeners
+    _configureConnection(conn) {
+      conn.on("data", data => {
+        this._handleData(conn.peer, data)
+      });
+      conn.on("close", () => this._removeConnection(conn));
+      conn.on("error", () => this._removeConnection(conn));
+
+      // if the caller joins have a call, we merge calls
+      conn.metadata.peers.forEach(peerId => {
+        if (!this.connections[peerId]) {
+          this.connect(peerId);
+        }
+      });
+    },
   }
 })
