@@ -49,6 +49,21 @@
             <v-btn color="primary" :disabled="!valid || !peerID()" @click="copyShareLink">Share Join Link</v-btn>
           </v-card-actions>
         </v-card>
+        <v-snackbar
+          v-model="copied"
+        >
+          Join link copied to clipboard
+
+          <template v-slot:actions>
+            <v-btn
+              color="pink"
+              variant="text"
+              @click="copied = false"
+            >
+              Close
+            </v-btn>
+          </template>
+        </v-snackbar>
       </v-col>
     </v-row>
   </v-container>
@@ -62,6 +77,7 @@ const loadingGameData = ref(false)
 const game = useGameStore()
 const waiting = ref(true)
 const valid = ref(false)
+const copied = ref(false)
 const form = ref(null)
 
 const dilemmaInfo = computed(() => {
@@ -109,6 +125,7 @@ const copyShareLink = () => {
   if (game.peer && game.peer.id) {
     const pathPrefix = import.meta.env.BASE_URL;
     navigator.clipboard.writeText(`${window.origin}${pathPrefix}join/${game.peer.id}`)
+    copied.value = true
   }
 }
 
