@@ -72,7 +72,6 @@
 <script setup>
 import { useGameStore } from '@/store/game'
 import { computed, ref, onMounted } from 'vue'
-import { Random, MersenneTwister19937, createEntropy } from 'random-js'
 import { useRouter } from 'vue-router'
 const loadingGameData = ref(false)
 const game = useGameStore()

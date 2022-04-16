@@ -26,6 +26,7 @@ export const useGameStore = defineStore('game', {
     seed: [], // the seed used for the random number generator
     players: [], // the players in the game, in play order
     phase: 0, // the current phase of the game
+    playerStates: [] // the current state of each player
   }),
   getters: {
     isBoss() {
@@ -38,6 +39,7 @@ export const useGameStore = defineStore('game', {
   actions: {
     // Commands
     updateName() {
+      this.usernames[this.peerID] = this.username
       Object.values(this.connections).forEach(conn => {
         this._updateName(conn)
       })
@@ -59,17 +61,27 @@ export const useGameStore = defineStore('game', {
 
     startGame() {
       this.players = [this.peerID, ...this.peers]
+      this.playerStates = this.players.map((p) => { return { peerID: p, voted: false, username: this.usernames[p] } })
       Object.values(this.connections).forEach(conn => {
         this._startGame(conn)
       })
     },
 
+    vote(v) {
+      this.playerStates[this.players.indexOf(this.peerID)].voted = true
+      Object.values(this.connections).forEach(conn => {
+        this._updateVotes(conn)
+      })
+    },
+
     loadDilemmas() {
+      if (this.seed.length == 0) {
+        this.seed = createEntropy()
+      }
       return fetch(`https://opensheet.elk.sh/${this.spreadsheetID}/1`)
       .then((res) => res.json())
       .then((data) => {
         this.dilemmas = data
-        this.seed = createEntropy()
         new Random(MersenneTwister19937.seedWithArray(this.seed)).shuffle(this.dilemmas)
       })
     },
@@ -167,10 +179,15 @@ export const useGameStore = defineStore('game', {
           this.phase = 2
           break;
 
+        case "updateVotes":
+          this.playerStates[this.players.indexOf(peerId)].voted = true
+          break;
+
         case "startGame":
           this.seed = data.seed;
           this.spreadsheetID = data.spreadsheetID;
           this.players = data.players;
+          this.playerStates = this.players.map((p) => { return { peerID: p, voted: false, username: this.usernames[p] } })
           this.loadDilemmas().then(() => {
             this.phase = 1
             this.gameStarted = true;
@@ -187,6 +204,12 @@ export const useGameStore = defineStore('game', {
       conn.send({
         type: 'updateName',
         username: this.username
+      })
+    },
+
+    _updateVotes(conn) {
+      conn.send({
+        type: 'updateVotes'
       })
     },
 
