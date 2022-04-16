@@ -5,13 +5,14 @@
         <v-card>
           <v-card-title>
             {{ game.username }}
+            <v-spacer></v-spacer>
             <v-avatar
               color="primary"
               size="24"
-              v-text="game.points"
+              v-text="game.points[game.peerID] || 0"
             ></v-avatar>
           </v-card-title>
-          <v-window v-model="phase">
+          <v-window v-model="game.phase">
             <v-window-item :value="1">
               <phase-one></phase-one>
             </v-window-item>
@@ -47,8 +48,7 @@
    * the boss will pick the next two dilemmas from the dilemma list.
    * the non-bosses will see a waiting for boss message
    * the boss selects one of the two dilemmas. the selected dilemma is sent to all players and triggers
-     phase 2. non-bosses on receipt of the dilemma remove it from their dilemma list. the remaining dilemmas
-     are shuffled. the boss moves the dilemma from their dilemma list and shuffles the remainder.
+     phase 2. the unchosen dilemma is moved to the end of the dilemma list.
 
   Phase 2: discussing a dilemma
    * all players (including boss) see the dilemma
@@ -76,4 +76,8 @@ import PhaseOne from './phases/PhaseOne.vue'
 import PhaseTwo from './phases/PhaseTwo.vue'
 import PhaseThree from './phases/PhaseThree.vue'
 import PhaseFour from './phases/PhaseFour.vue'
+
+import { useGameStore } from '@/store/game'
+const game = useGameStore()
+
 </script>

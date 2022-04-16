@@ -44,7 +44,7 @@
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" :to="gameLink" :disabled="!valid || !peerID()">Start Game</v-btn>
+            <v-btn color="primary" @click="startGame" :disabled="!valid || !peerID()  || game.peers.length == 0">Start Game</v-btn>
             <v-spacer></v-spacer>
             <v-btn color="primary" :disabled="!valid || !peerID()" @click="copyShareLink">Share Join Link</v-btn>
           </v-card-actions>
@@ -73,12 +73,14 @@
 import { useGameStore } from '@/store/game'
 import { computed, ref, onMounted } from 'vue'
 import { Random, MersenneTwister19937, createEntropy } from 'random-js'
+import { useRouter } from 'vue-router'
 const loadingGameData = ref(false)
 const game = useGameStore()
 const waiting = ref(true)
 const valid = ref(false)
 const copied = ref(false)
 const form = ref(null)
+const router = useRouter()
 
 const dilemmaInfo = computed(() => {
   if (!game.spreadsheetID || loadingGameData.value) return
@@ -87,16 +89,14 @@ const dilemmaInfo = computed(() => {
   ]
 })
 
-const gameLink = computed(() => {
-  if (game.peer && game.peer.id) {
-    return `/game/${game.peer.id}`
-  }
-  return null
-})
+function startGame() {
+  game.startGame()
+  router.push(`/game/${game.peerID}`)
+}
 
 function peerID() {
-  if (game.peer && game.peer.id) {
-    return game.peer.id
+  if (game.peer && game.peerID) {
+    return game.peerID
   }
   return null
 }
@@ -106,25 +106,18 @@ function loadGameData() {
     return
   }
   loadingGameData.value = true
-  fetch(`https://opensheet.elk.sh/${game.spreadsheetID}/1`)
-    .then((res) => res.json())
-    .then((data) => {
-      game.dilemmas = data
-      game.seed = createEntropy()
-      new Random(MersenneTwister19937.seedWithArray(game.seed)).shuffle(game.dilemmas)
-    })
-    .then(() => {
-      loadingGameData.value = false
-      if (form.value) {
-        form.value.validate()
-      }
-    });
+  game.loadDilemmas().then(() => {
+    loadingGameData.value = false
+    if (form.value) {
+      form.value.validate()
+    }
+  });
 }
 
 const copyShareLink = () => {
-  if (game.peer && game.peer.id) {
+  if (game.peer && game.peerID) {
     const pathPrefix = import.meta.env.BASE_URL;
-    navigator.clipboard.writeText(`${window.origin}${pathPrefix}join/${game.peer.id}`)
+    navigator.clipboard.writeText(`${window.origin}${pathPrefix}join/${game.peerID}`)
     copied.value = true
   }
 }

@@ -21,6 +21,7 @@
                 placeholder="fb4ab9dc-fdee-4a99-94f2-bef76b1078a2"
                 variant="outlined"
                 v-model="joinCode"
+                :disabled="game.peers.length > 0"
                 required
                 :rules="[v => !!v || 'Join code is required']"
               ></v-text-field>
@@ -38,7 +39,7 @@
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" @click="joinGame" :disabled="!valid">Join Game</v-btn>
+            <v-btn color="primary" @click="joinGame" :disabled="!valid || game.peers.length > 0">Join Game</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -48,16 +49,17 @@
 
 <script setup>
 import { useGameStore } from '@/store/game'
-import { ref, onMounted } from 'vue'
-import { onBeforeRouteUpdate, useRoute } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 const game = useGameStore()
 const joinCode = ref()
 const route = useRoute()
+const router = useRouter()
 const valid = ref(false)
 const form = ref(null)
 
 const joinGame = () => {
-  console.log(`Joining game ${joinCode.value}`)
+
   game.connect(joinCode.value)
 }
 
@@ -76,6 +78,17 @@ function updateName() {
     game.updateName()
   }
 }
+
+function isGameStarted() {
+  return game.gameStarted
+}
+
+watch(isGameStarted, async (newstate, oldstate) => {
+  console.log(`game started: ${newstate}, oldstate: ${oldstate}`)
+  if (newstate) {
+    router.push(`/game/${joinCode.value}`)
+  }
+})
 
 onMounted(() => {
   game.createPeer()
