@@ -25,6 +25,9 @@
             <v-window-item :value="4">
               <phase-four></phase-four>
             </v-window-item>
+            <v-window-item :value="5">
+              <phase-five></phase-five>
+            </v-window-item>
           </v-window>
         </v-card>
       </v-col>
@@ -67,6 +70,9 @@
      what their choice would be
    * when all players have finished discussing, the points are calculated and awarded
      to players based on their guesses
+
+  Phase 5: round summary
+   * show players points in descending order
    * if a player has greater than the winning number of points, they win and game ends.
    * otherwise the next boss is chosen and the game resets to phase 1.
 
@@ -76,6 +82,7 @@ import PhaseOne from './phases/PhaseOne.vue'
 import PhaseTwo from './phases/PhaseTwo.vue'
 import PhaseThree from './phases/PhaseThree.vue'
 import PhaseFour from './phases/PhaseFour.vue'
+import PhaseFive from './phases/PhaseFive.vue'
 
 import { useGameStore } from '@/store/game'
 const game = useGameStore()

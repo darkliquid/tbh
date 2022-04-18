@@ -8,24 +8,27 @@ import { Random, MersenneTwister19937, createEntropy } from 'random-js'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
-    bossIdx: 0, // index in the players array of the boss
+    // initial game state
     spreadsheetID: '1a-CQwdJhlCPDl2MVbIpfELS0Phcf7acVFA5-iXXIW1Y',
-    points: {}, // { peerID: 0 }
-    dilemma: null, // { prompt: '', question:'' }
-    dilemmas: [], // [{ prompt: '', question:'' }]
-    isHost: true, // whether or not the user is the host
-    peer: null, // the peer object used for webrtc connections
-    peerID: '', // the peerID of the user
-    peers: [], // the peerids of all other connected users
-    connections: {}, // webrtc connections { peerID: connection }
-    username: '', // current username
-    usernames: {}, // usernames for each peerid
+    isHost: true,       // whether or not the user is the host
+    peer: null,         // the peer object used for webrtc connections
+    peerID: '',         // the peerID of the user
+    peers: [],          // the peerids of all other connected users
+    seed: [],           // the seed used for the random number generator
+    connections: {},    // webrtc connections { peerID: connection }
     gameStarted: false, // whether or not the game has started
-    seed: [], // the seed used for the random number generator
-    players: [], // the players in the game, in play order
-    phase: 0, // the current phase of the game
+    username: '',       // current username
+    usernames: {},      // usernames for each peerid
+
+    // state that changes during the game
+    bossIdx: 0,       // index in the players array of the boss
+    dilemma: null,    // { prompt: '', question:'' }
+    dilemmas: [],     // [{ prompt: '', question:'' }]
+    points: {},       // { peerID: 0 }
+    players: [],      // the players in the game, in play order
+    phase: 0,         // the current phase of the game
     playerStates: [], // the current state of each player
-    results: {} // the results of the game { peerID: { vote: true|false, yes: [peerID], no: [peerID] }}
+    results: {}       // the results of the game { peerID: { vote: true|false, yes: [peerID], no: [peerID] }}
   }),
   getters: {
     isBoss() {
@@ -81,7 +84,11 @@ export const useGameStore = defineStore('game', {
     },
     roundPoints() {
       var guesses = {}
-      this.peers.forEach(player => {
+      if (Object.keys(this.results).length < this.players.length) {
+        return 0
+      }
+
+      this.players.forEach(player => {
         if (!this.results[player]) {
           return
         }
@@ -93,19 +100,35 @@ export const useGameStore = defineStore('game', {
         })
       })
 
-      console.log(guesses)
-
       var points = 0
       Object.keys(guesses).forEach(peerID => {
-        console.log(peerID)
-        console.log(guesses[peerID])
-        if (guesses[peerID].findIndex(guess => guess.peerID === this.peerID && guess.guess === this.results[this.peerID].vote) > -1) {
-          console.log(this.players.length - guesses[peerID].length)
-          points += this.players.length - guesses[peerID].length
+        var guess = guesses[peerID].find((guess) => { return guess.peerID === this.peerID })
+        if (guess) {
+          if (guess.guess === this.results[peerID].vote) {
+            var guessPoints = (this.players.length - guesses[peerID].length)
+            points = points + guessPoints
+          }
         }
       })
 
       return points
+    },
+    friendlyPoints() {
+      var results = []
+      this.players.forEach(player => {
+        if (!Number.isInteger(this.points[player])) {
+          return
+        }
+
+        results.push({
+          name: this.usernames[player],
+          points: this.points[player]
+        })
+      })
+
+      return results.sort((a, b) => {
+        return b.points - a.points
+      })
     }
   },
   actions: {
@@ -131,6 +154,13 @@ export const useGameStore = defineStore('game', {
       this.phase = 2
     },
 
+    updatePoints() {
+      this.points[this.peerID] = (this.points[this.peerID] || 0) + this.roundPoints
+      Object.values(this.connections).forEach(conn => {
+        this._updatePoints(conn)
+      })
+    },
+
     startGame() {
       this.players = [this.peerID, ...this.peers]
       this.playerStates = this.players.map((p) => { return {
@@ -141,6 +171,19 @@ export const useGameStore = defineStore('game', {
       } })
       Object.values(this.connections).forEach(conn => {
         this._startGame(conn)
+      })
+    },
+
+    nextRound() {
+      this.playerStates.forEach((state) => {
+        state.voted = false
+        state.guessed = false
+      })
+      this.results = {}
+      this.bossIdx = (this.bossIdx + 1) % this.players.length
+      this.phase = 1
+      Object.values(this.connections).forEach(conn => {
+        this._nextRound(conn)
       })
     },
 
@@ -322,6 +365,10 @@ export const useGameStore = defineStore('game', {
           this.playerStates[this.players.indexOf(peerId)].guessed = true
           break;
 
+        case "updatePoints":
+          this.points[peerId] = (this.points[peerId] || 0) + data.points
+          break;
+
         case "revealResults":
           this.results[peerId] = data.results
           break;
@@ -340,6 +387,16 @@ export const useGameStore = defineStore('game', {
             this.phase = 1
             this.gameStarted = true;
           })
+          break;
+
+        case "nextRound":
+          this.playerStates.forEach((state) => {
+            state.voted = false
+            state.guessed = false
+          })
+          this.results = {}
+          this.bossIdx = (this.bossIdx + 1) % this.players.length
+          this.phase = 1
           break;
 
         default:
@@ -367,6 +424,13 @@ export const useGameStore = defineStore('game', {
       })
     },
 
+    _updatePoints(conn) {
+      conn.send({
+        type: 'updatePoints',
+        points: this.points[this.peerID]
+      })
+    },
+
     _revealResults(conn) {
       conn.send({
         type: 'revealResults',
@@ -387,6 +451,12 @@ export const useGameStore = defineStore('game', {
         seed: this.seed,
         spreadsheetID: this.spreadsheetID,
         players: this.players
+      })
+    },
+
+    _nextRound(conn) {
+      conn.send({
+        type: 'nextRound',
       })
     },
 

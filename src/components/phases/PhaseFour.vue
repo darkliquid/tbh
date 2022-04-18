@@ -4,11 +4,12 @@
       <p>Waiting for results</p>
     </template>
     <template v-else>
+      <p class="score text-center">You scored {{ game.roundPoints }} this round</p>
       <v-expansion-panels class="round-results">
         <v-expansion-panel v-for="(results, index) in game.friendlyResults" :key="index">
           <v-expansion-panel-title>
             {{ results.username }}
-            <template v-slot:actions="{ expanded }">
+            <template v-slot:actions="{  }">
               <v-icon :color="results.vote ? 'success' : 'error'" :icon="results.vote ? 'mdi-thumb-up' : 'mdi-thumb-down'"></v-icon>
             </template>
           </v-expansion-panel-title>
@@ -32,23 +33,20 @@
     </template>
   </v-card-text>
   <v-divider></v-divider>
-  <v-card-actions></v-card-actions>
+  <v-card-actions>
+    <v-btn color="primary" @click="nextPhase">Scores</v-btn>
+  </v-card-actions>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
 
-function allResults() {
-  return Object.keys(game.results).length == game.players.length
+function nextPhase() {
+  game.updatePoints()
+  game.phase = 5
 }
-
-watch(allResults, async (newstate, oldstate) => {
-  if (newstate) {
-    game.points = game.roundPoints
-  }
-})
 
 onMounted(() =>{
   game.revealResults()
@@ -58,5 +56,9 @@ onMounted(() =>{
 <style>
 .round-results .v-expansion-panel-text > div {
   padding: 4px 0 !important;
+}
+
+.score {
+  margin-bottom: 1em;
 }
 </style>

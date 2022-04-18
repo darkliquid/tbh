@@ -40,19 +40,17 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
-const voted = ref(false)
+const voted = computed(() => (game.playerStates[game.peerID] && game.playerStates[game.peerID].voted))
 
 function chooseYes() {
   game.vote(true)
-  voted.value = true
 }
 
 function chooseNo() {
   game.vote(false)
-  voted.value = true
 }
 
 function allVoted() {

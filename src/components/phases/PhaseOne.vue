@@ -53,11 +53,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
 
-const choices = game.dilemmas.slice(0, 2)
+const choices = computed(() => game.dilemmas.slice(0, 2))
 const choice = ref(0)
 
 function startRound() {
