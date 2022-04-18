@@ -127,6 +127,7 @@ function allGuessed() {
 
 watch(allGuessed, async (newstate, oldstate) => {
   if (newstate) {
+    game.revealResults()
     game.phase = 4
     waiting.value = false
   }

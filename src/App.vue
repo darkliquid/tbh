@@ -12,10 +12,10 @@
 
 <style>
 html, body, #app, #app .v-application {
-  height: 100%;
+  /*min-height: 100%;*/
 }
 
-#app .v-application {
+body {
   background-color:#efb71a;
   background-image: linear-gradient(30deg, #019fc7 12%, transparent 12.5%, transparent 87%, #019fc7 87.5%, #019fc7),
   linear-gradient(150deg, #019fc7 12%, transparent 12.5%, transparent 87%, #019fc7 87.5%, #019fc7),
@@ -25,6 +25,11 @@ html, body, #app, #app .v-application {
   linear-gradient(60deg, #d75c9d 25%, transparent 25.5%, transparent 75%, #d75c9d 75%, #d75c9d);
   background-size:80px 140px;
   background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
+  background-repeat: repeat;
+}
+
+#app .v-application {
+  background: transparent;
 }
 
 #app .v-btn--disabled.v-btn--disabled {

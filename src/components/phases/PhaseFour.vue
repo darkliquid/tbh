@@ -34,12 +34,11 @@
   </v-card-text>
   <v-divider></v-divider>
   <v-card-actions>
-    <v-btn color="primary" @click="nextPhase">Scores</v-btn>
+    <v-btn color="primary" @click="nextPhase">Review Scores</v-btn>
   </v-card-actions>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
 
@@ -47,10 +46,6 @@ function nextPhase() {
   game.updatePoints()
   game.phase = 5
 }
-
-onMounted(() =>{
-  game.revealResults()
-})
 </script>
 
 <style>

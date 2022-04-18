@@ -25,7 +25,7 @@
   </v-card-text>
   <v-divider></v-divider>
   <v-card-actions>
-    <v-btn color="primary" @click="nextRound">Next</v-btn>
+    <v-btn color="primary" @click="nextRound">Next Round</v-btn>
   </v-card-actions>
 </template>
 
