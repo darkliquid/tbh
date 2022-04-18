@@ -10,8 +10,6 @@ export const useGameStore = defineStore('game', {
   state: () => ({
     bossIdx: 0, // index in the players array of the boss
     spreadsheetID: '1a-CQwdJhlCPDl2MVbIpfELS0Phcf7acVFA5-iXXIW1Y',
-    answers: {}, // { peerID: true|false }
-    guesses: {}, // { peerID: [{ peerID: true|false }]}
     points: {}, // { peerID: 0 }
     dilemma: null, // { prompt: '', question:'' }
     dilemmas: [], // [{ prompt: '', question:'' }]
@@ -26,7 +24,8 @@ export const useGameStore = defineStore('game', {
     seed: [], // the seed used for the random number generator
     players: [], // the players in the game, in play order
     phase: 0, // the current phase of the game
-    playerStates: [] // the current state of each player
+    playerStates: [], // the current state of each player
+    results: {} // the results of the game { peerID: { vote: true|false, yes: [peerID], no: [peerID] }}
   }),
   getters: {
     isBoss() {
@@ -34,6 +33,79 @@ export const useGameStore = defineStore('game', {
     },
     boss() {
       return this.usernames[this.players[this.bossIdx]] || 'boss'
+    },
+    maxGuesses() {
+      return Math.ceil((this.players.length - 1) / 2)
+    },
+    totalGuesses() {
+      return this.players.length - 1
+    },
+    yesGuesses() {
+      if (!this.results[this.peerID]) return []
+      return this.results[this.peerID].yes || []
+    },
+    noGuesses() {
+      if (!this.results[this.peerID]) return []
+      return this.results[this.peerID].no || []
+    },
+    remainingGuesses() {
+      return this.totalGuesses - (this.yesGuesses.length + this.noGuesses.length)
+    },
+    friendlyResults() {
+      var guesses = {}
+      this.players.forEach(player => {
+        if (!this.results[player]) {
+          return
+        }
+        this.results[player].yes.forEach(yes => {
+          guesses[yes] = (guesses[yes] || []).concat([{ name: this.usernames[player], guess: true }])
+        })
+        this.results[player].no.forEach(no => {
+          guesses[no] = (guesses[no] || []).concat([{ name: this.usernames[player], guess: false }])
+        })
+      })
+
+      var results = []
+      this.players.forEach(peerID => {
+        if (!this.results[peerID]) {
+          return
+        }
+        results.push({
+          username: this.usernames[peerID],
+          vote: this.results[peerID].vote,
+          guesses: guesses[peerID] || []
+        })
+      })
+
+      return results
+    },
+    roundPoints() {
+      var guesses = {}
+      this.peers.forEach(player => {
+        if (!this.results[player]) {
+          return
+        }
+        this.results[player].yes.forEach(yes => {
+          guesses[yes] = (guesses[yes] || []).concat([{ peerID: player, guess: true }])
+        })
+        this.results[player].no.forEach(no => {
+          guesses[no] = (guesses[no] || []).concat([{ peerID: player, guess: false }])
+        })
+      })
+
+      console.log(guesses)
+
+      var points = 0
+      Object.keys(guesses).forEach(peerID => {
+        console.log(peerID)
+        console.log(guesses[peerID])
+        if (guesses[peerID].findIndex(guess => guess.peerID === this.peerID && guess.guess === this.results[this.peerID].vote) > -1) {
+          console.log(this.players.length - guesses[peerID].length)
+          points += this.players.length - guesses[peerID].length
+        }
+      })
+
+      return points
     }
   },
   actions: {
@@ -61,16 +133,61 @@ export const useGameStore = defineStore('game', {
 
     startGame() {
       this.players = [this.peerID, ...this.peers]
-      this.playerStates = this.players.map((p) => { return { peerID: p, voted: false, username: this.usernames[p] } })
+      this.playerStates = this.players.map((p) => { return {
+        peerID: p,
+        voted: false,
+        username: this.usernames[p],
+        guessed: false
+      } })
       Object.values(this.connections).forEach(conn => {
         this._startGame(conn)
       })
     },
 
     vote(v) {
+      if (!this.results[this.peerID]) {
+        this.results[this.peerID] = { vote: v, yes: [], no: [] }
+      }
+
+      this.results[this.peerID].vote = v
       this.playerStates[this.players.indexOf(this.peerID)].voted = true
       Object.values(this.connections).forEach(conn => {
         this._updateVotes(conn)
+      })
+    },
+
+    guess(peerID, guess) {
+      if (guess) {
+        this.results[this.peerID].no = (this.results[this.peerID].no || []).filter(g => g !== peerID)
+        if (!this.results[this.peerID].yes) {
+          this.results[this.peerID].yes = [peerID]
+        } else if (this.results[this.peerID].yes.includes(peerID)) {
+          this.results[this.peerID].yes = this.results[this.peerID].yes.filter(g => g !== peerID)
+        } else {
+          this.results[this.peerID].yes.push(peerID)
+        }
+      } else {
+        this.results[this.peerID].yes = (this.results[this.peerID].yes || []).filter(g => g !== peerID)
+        if (!this.results[this.peerID].no) {
+          this.results[this.peerID].no = [peerID]
+        } else if (this.results[this.peerID].no.includes(peerID)) {
+          this.results[this.peerID].no = this.results[this.peerID].no.filter(g => g !== peerID)
+        } else {
+          this.results[this.peerID].no.push(peerID)
+        }
+      }
+    },
+
+    updateGuessed() {
+      this.playerStates[this.players.indexOf(this.peerID)].guessed = true
+      Object.values(this.connections).forEach(conn => {
+        this._updateGuessed(conn)
+      })
+    },
+
+    revealResults() {
+      Object.values(this.connections).forEach(conn => {
+        this._revealResults(conn)
       })
     },
 
@@ -115,7 +232,25 @@ export const useGameStore = defineStore('game', {
       if (this.peer) {
         return this.peer;
       }
-      this.peer = markRaw(new Peer());
+      this.peer = markRaw(new Peer({ config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          {
+            urls: "stun:openrelay.metered.ca:80",
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+          },
+        ],
+        sdpSemantics: 'unified-plan'
+      }}));
 
       // when peer is connected to signaling server
       this.peer.on("open", (id) => {
@@ -183,11 +318,24 @@ export const useGameStore = defineStore('game', {
           this.playerStates[this.players.indexOf(peerId)].voted = true
           break;
 
+        case "updateGuessed":
+          this.playerStates[this.players.indexOf(peerId)].guessed = true
+          break;
+
+        case "revealResults":
+          this.results[peerId] = data.results
+          break;
+
         case "startGame":
           this.seed = data.seed;
           this.spreadsheetID = data.spreadsheetID;
           this.players = data.players;
-          this.playerStates = this.players.map((p) => { return { peerID: p, voted: false, username: this.usernames[p] } })
+          this.playerStates = this.players.map((p) => { return {
+            peerID: p,
+            voted: false,
+            username: this.usernames[p],
+            guessed: false
+          } })
           this.loadDilemmas().then(() => {
             this.phase = 1
             this.gameStarted = true;
@@ -210,6 +358,19 @@ export const useGameStore = defineStore('game', {
     _updateVotes(conn) {
       conn.send({
         type: 'updateVotes'
+      })
+    },
+
+    _updateGuessed(conn) {
+      conn.send({
+        type: 'updateGuessed'
+      })
+    },
+
+    _revealResults(conn) {
+      conn.send({
+        type: 'revealResults',
+        results: this.results[this.peerID]
       })
     },
 

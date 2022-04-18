@@ -84,7 +84,6 @@ function isGameStarted() {
 }
 
 watch(isGameStarted, async (newstate, oldstate) => {
-  console.log(`game started: ${newstate}, oldstate: ${oldstate}`)
   if (newstate) {
     router.push(`/game/${joinCode.value}`)
   }
