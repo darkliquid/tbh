@@ -156,6 +156,7 @@ export const useGameStore = defineStore('game', {
 
     updatePoints() {
       this.points[this.peerID] = (this.points[this.peerID] || 0) + this.roundPoints
+      this.playerStates[this.players.indexOf(this.peerID)].scored = true
       Object.values(this.connections).forEach(conn => {
         this._updatePoints(conn)
       })
@@ -167,7 +168,8 @@ export const useGameStore = defineStore('game', {
         peerID: p,
         voted: false,
         username: this.usernames[p],
-        guessed: false
+        guessed: false,
+        scored: false
       } })
       Object.values(this.connections).forEach(conn => {
         this._startGame(conn)
@@ -178,6 +180,7 @@ export const useGameStore = defineStore('game', {
       this.playerStates.forEach((state) => {
         state.voted = false
         state.guessed = false
+        state.scored = false
       })
       this.results = {}
       this.bossIdx = (this.bossIdx + 1) % this.players.length
@@ -366,6 +369,7 @@ export const useGameStore = defineStore('game', {
           break;
 
         case "updatePoints":
+          this.playerStates[this.players.indexOf(peerId)].scored = true
           this.points[peerId] = (this.points[peerId] || 0) + data.points
           break;
 
@@ -427,7 +431,7 @@ export const useGameStore = defineStore('game', {
     _updatePoints(conn) {
       conn.send({
         type: 'updatePoints',
-        points: this.points[this.peerID]
+        points: this.roundPoints
       })
     },
 

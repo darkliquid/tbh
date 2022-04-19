@@ -33,7 +33,7 @@
 import { computed } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
-const allPoints = computed(() => game.friendlyPoints.length === game.players.length)
+const allPoints = computed(() => game.friendlyPoints.length === game.players.length && game.playerStates.every(state => state.scored))
 const winners = computed(() => {
   var wins = game.friendlyPoints.filter(p => p.points >= 25)
   if (wins.length > 1) {
