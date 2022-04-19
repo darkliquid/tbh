@@ -144,7 +144,10 @@ export const useGameStore = defineStore('game', {
       this.dilemma = this.dilemmas[choiceIdx]
       // remove the chosen item and move the remaining items to the end
       this.dilemmas = this.dilemmas.filter((_, i) => i !== choiceIdx)
-      this.dilemmas.push(this.dilemmas.shift())
+      var d = this.dilemmas.shift()
+      if (!!d) {
+        this.dilemmas.push(d)
+      }
 
       // Inform peers of the choice
       Object.values(this.connections).forEach(conn => {
@@ -356,7 +359,10 @@ export const useGameStore = defineStore('game', {
           this.dilemma = this.dilemmas[data.choiceIdx]
           // remove the chosen item and move the remaining items to the end
           this.dilemmas = this.dilemmas.filter((_, i) => i !== data.choiceIdx)
-          this.dilemmas.push(this.dilemmas.shift())
+          var d = this.dilemmas.shift()
+          if (!!d) {
+            this.dilemmas.push(d)
+          }
           this.phase = 2
           break;
 

@@ -43,7 +43,9 @@
 import { computed, watch } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
-const voted = computed(() => (game.playerStates[game.peerID] && game.playerStates[game.peerID].voted))
+const voted = computed(() => {
+  return game.playerStates[game.players.indexOf(game.peerID)] && game.playerStates[game.players.indexOf(game.peerID)].voted
+})
 
 function chooseYes() {
   game.vote(true)
@@ -54,7 +56,7 @@ function chooseNo() {
 }
 
 function allVoted() {
-  return game.playerStates.every(state => state.voted)
+  return game.playerStates.length === game.players.length && game.playerStates.every(state => state.voted)
 }
 
 watch(allVoted, async (newstate, oldstate) => {
@@ -78,6 +80,10 @@ watch(allVoted, async (newstate, oldstate) => {
   margin-top: 2em;
   width: 100%;
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
+
+.v-card-actions .waiting {
+  margin-top: 0;
 }
 
 </style>

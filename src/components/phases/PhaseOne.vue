@@ -57,7 +57,7 @@ import { ref, computed } from 'vue'
 import { useGameStore } from '@/store/game'
 const game = useGameStore()
 
-const choices = computed(() => game.dilemmas.slice(0, 2))
+const choices = computed(() => game.dilemmas.slice(0, 2).filter(dilemma => !!dilemma))
 const choice = ref(0)
 
 function startRound() {
