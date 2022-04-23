@@ -71,7 +71,7 @@
 
 <script setup>
 import { useGameStore } from '@/store/game'
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 const loadingGameData = ref(false)
 const game = useGameStore()
@@ -100,10 +100,20 @@ function peerID() {
   return null
 }
 
+const spreadsheetRegex = /spreadsheets\/d\/([^/]+)\/edit/
+
 function loadGameData() {
   if (loadingGameData.value) {
     return
   }
+
+  if (game.spreadsheetID) {
+    const match = game.spreadsheetID.match(spreadsheetRegex);
+    if (match && match.length > 1) {
+      game.spreadsheetID = match[1]
+    }
+  }
+
   loadingGameData.value = true
   game.loadDilemmas().then(() => {
     loadingGameData.value = false
