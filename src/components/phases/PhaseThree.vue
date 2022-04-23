@@ -65,9 +65,14 @@ const waiting = ref(false)
 function canGuess(peerID, guess) {
   if (waiting.value) return false
 
-  // can toggle off yes votes
-  if (game.yesGuesses.includes(peerID) || game.noGuesses.includes(peerID)) {
+  // can toggle off guesses
+  if ((guess && game.yesGuesses.includes(peerID)) || (!guess && game.noGuesses.includes(peerID))) {
     return true
+  }
+
+  // if we've reached the max guesses for this type of guess, then no
+  if ((guess ? game.yesGuesses.length : game.noGuesses.length) >= game.maxGuesses) {
+    return false
   }
 
   // can't toggle on guesses if no more remain
@@ -85,6 +90,10 @@ function guessColor(peerID, guess) {
     }
 
     return 'error'
+  }
+
+  if ((guess ? game.yesGuesses.length : game.noGuesses.length) >= game.maxGuesses) {
+    return 'grey'
   }
 
   if (game.remainingGuesses <= 0) {
