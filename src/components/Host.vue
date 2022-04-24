@@ -29,6 +29,8 @@
                 @click:clear="game.dilemmas = []"
                 required
                 :rules="[ v => (v && v.length > 0) || 'You need at least 1 dilemma']"
+                :hint="dilemmaHint"
+                persistent-hint
               ></v-text-field>
               <v-list>
                 <v-list-item v-if="waiting">
@@ -81,10 +83,12 @@ const copied = ref(false)
 const form = ref(null)
 const router = useRouter()
 
+const dilemmaHint = "You can enter multiple spreadsheet IDs (or full google sheets URLs) separated by commas."
+
 const dilemmaInfo = computed(() => {
-  if (!game.spreadsheetID || loadingGameData.value) return
+  if (!game.spreadsheetID || loadingGameData.value) return dilemmaHint
   return [
-    `${game.dilemmas.length} dilemmas loaded`
+    `${game.dilemmas.length} dilemmas loaded. ${dilemmaHint}`
   ]
 })
 

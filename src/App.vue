@@ -2,7 +2,7 @@
   <v-theme-provider :theme="darkMode ? 'dark' : 'light'">
     <v-app full-height>
       <v-app-bar app>
-        <v-app-bar-title>TBH</v-app-bar-title>
+        <v-app-bar-title><router-link to="/" class="app-title">TBH</router-link></v-app-bar-title>
         <v-spacer></v-spacer>
         <v-switch
           v-model="darkMode"
@@ -48,7 +48,20 @@ body {
   color: rgba(var(--v-theme-on-surface), 0.26) !important;
 }
 
-.dark-mode-switch {
-  flex: 0 1 auto !important;
+#app .dark-mode-switch {
+  flex: 0 1 auto;
+}
+
+#app .dark-mode-switch .mdi-weather-night {
+  color: rgb(var(--v-theme-primary));
+}
+
+#app .dark-mode-switch .mdi-white-balance-sunny {
+  color: rgb(var(--v-theme-warning));
+}
+
+#app .app-title {
+  text-decoration: none;
+  color: rgb(var(--v-theme-on-surface));
 }
 </style>
