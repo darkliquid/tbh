@@ -16,12 +16,30 @@
       <v-main>
         <router-view />
       </v-main>
+      <v-snackbar
+        v-model="hasLeavers"
+      >
+        {{ game.left.join(', ') }} left the game
+
+        <template v-slot:actions>
+          <v-btn
+            color="pink"
+            variant="text"
+            @click="game.left = []"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
     </v-app>
   </v-theme-provider>
 </template>
 
 <script setup>
-import { inject, ref } from 'vue'
+import { inject, ref, computed } from 'vue'
+import { useGameStore } from './store/game'
+const game = useGameStore()
+const hasLeavers = computed(() => game.left.length > 0)
 const initialDarkMode = inject('mq')
 const darkMode = ref(initialDarkMode.isDark)
 </script>

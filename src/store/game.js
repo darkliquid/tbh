@@ -19,6 +19,7 @@ export const useGameStore = defineStore('game', {
     gameStarted: false, // whether or not the game has started
     username: '',       // current username
     usernames: {},      // usernames for each peerid
+    left: [],
 
     // state that changes during the game
     bossIdx: 0,       // index in the players array of the boss
@@ -483,7 +484,21 @@ export const useGameStore = defineStore('game', {
     },
     _updatepeers() {
       this.peers = Object.keys(this.connections);
-      // handle players leaving and/or rejoining properly here.
+
+      // remove the players, reset states, and reset points
+      if (this.gameStarted && this.players.length > this.peers.length) {
+        this.left = this.players.filter((p) => !this.peers.includes(p)).map((p) => { return this.usernames[p]})
+        this.players = this.players.filter((p) => this.peers.includes(p))
+        var playerStates = {};
+        this.playerStates.forEach((state) => {
+          playerStates[state.peerID] = state
+        })
+        this.playerStates = []
+        this.players.forEach((p) => {
+          delete this.results[p];
+          this.playerStates.push(playerStates[p])
+        })
+      }
     },
     _disconnectPeer() {
       this.peer.disconnect();
