@@ -2,7 +2,7 @@
   <v-theme-provider :theme="darkMode ? 'dark' : 'light'">
     <v-app full-height>
       <v-app-bar app>
-        <v-app-bar-title><router-link to="/" class="app-title">TBH</router-link></v-app-bar-title>
+        <v-app-bar-title><router-link to="/" class="app-title">Unofficial, TBH</router-link></v-app-bar-title>
         <v-spacer></v-spacer>
         <v-switch
           v-model="darkMode"

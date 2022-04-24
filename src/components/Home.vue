@@ -3,10 +3,10 @@
     <v-row>
       <v-col cols="12">
         <v-card>
-          <v-card-title>TBH</v-card-title>
+          <v-card-title>Unofficial, TBH</v-card-title>
           <v-card-text>
             <p>
-              TBH is a game about creating absurd dilemmas,
+              <strong>Unofficial, TBH</strong> is a game about discussing absurd dilemmas,
               and then predicting how the other players will react to them.
             </p>
 
@@ -16,8 +16,9 @@
             </p>
 
             <p>
-              This is an unofficial implementation of the game by
-              <a class="text-primary" href="http://twitter.com/darkliquid">@darkliquid</a> and comes
+              This is an unofficial implementation by <a class="text-primary" href="http://twitter.com/darkliquid">@darkliquid</a>
+              of the <a class="text-primary" href="https://buy.cut.com/en-gb/products/tbh-the-game-of-honest-answers-to-outrageous-questions">awesome TBH party game by Cut</a>
+              (which you should definitely buy) and comes
               with <strong>no</strong> official dilemmas. Instead, if you are hosting a game,
               provide the ID of a publicly published google spreadsheet full of dilemmas
               to use those for your game. By default, the game will use the dilemmas listed
