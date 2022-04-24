@@ -244,10 +244,12 @@ export const useGameStore = defineStore('game', {
       if (this.seed.length == 0) {
         this.seed = createEntropy()
       }
-      return fetch(`https://opensheet.elk.sh/${this.spreadsheetID}/1`)
-      .then((res) => res.json())
-      .then((data) => {
-        this.dilemmas = data
+
+      return Promise.all(this.spreadsheetID.split(',').map(id => {
+        return fetch(`https://opensheet.elk.sh/${id}/1`)
+          .then((res) => res.json())
+      })).then((data) => {
+        this.dilemmas = data.flat()
         new Random(MersenneTwister19937.seedWithArray(this.seed)).shuffle(this.dilemmas)
       })
     },
@@ -481,6 +483,7 @@ export const useGameStore = defineStore('game', {
     },
     _updatepeers() {
       this.peers = Object.keys(this.connections);
+      // handle players leaving and/or rejoining properly here.
     },
     _disconnectPeer() {
       this.peer.disconnect();

@@ -108,10 +108,13 @@ function loadGameData() {
   }
 
   if (game.spreadsheetID) {
-    const match = game.spreadsheetID.match(spreadsheetRegex);
-    if (match && match.length > 1) {
-      game.spreadsheetID = match[1]
-    }
+    game.spreadsheetID = game.spreadsheetID.split(',').map(id => {
+      const match = id.match(spreadsheetRegex)
+      if (match) {
+        return match[1]
+      }
+      return id
+    }).join(',')
   }
 
   loadingGameData.value = true
